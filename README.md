@@ -12,6 +12,8 @@ Reducing Temporal Correlation in PPO Without Degrading Performance
 
 ## Abstract
 
+![Abstract](https://raw.githubusercontent.com/ajheshbasnet/rollout-slim/main/static/abstract.png)
+
 On-policy trajectory data is correlated by construction. Each state causally produces the next, which breaks the IID assumption that stable neural network training depends on. This drives gradient updates toward near-collinearity, triggers a **Non-Stationary Bootstrapping Feedback Loop**, and damages both training stability and sample efficiency.
 
 Three methods are presented for reducing this correlation without modifying the core PPO pipeline. The main finding is that **randomly subsampling $p\%$ of transitions after GAE computation** — rather than before — is sufficient to break the temporal correlation structure while keeping the reward signal completely intact.
@@ -172,7 +174,7 @@ On-policy trajectories carry far more redundant, correlated transitions than is 
 ```bibtex
 @article{basnet2026rolloutslim,
   title     = {Not All Transitions Matter: Evidence from PPO},
-  author    = { Ajhesh and Dr B. Nagarajan},
+  author    = {Basnet, Ajhesh and Nagarajan, B.},
   year      = {2026},
   note      = {Department of AI and Data Science, KPRIET, Coimbatore},
   url       = {https://github.com/ajheshbasnet/rollout-slim}
