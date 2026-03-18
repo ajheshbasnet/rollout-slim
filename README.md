@@ -15,7 +15,7 @@ On-policy trajectory data is correlated by construction. Each state causally pro
 
 Three methods are presented for reducing this correlation without modifying the core PPO pipeline. The central finding is that **randomly subsampling $p\%$ of transitions after GAE computation** — rather than before — is sufficient to break the temporal correlation structure while keeping the reward signal completely intact.
 
-The method matches vanilla PPO on reward while showing measurably more stable training across five environments spanning discrete control, continuous locomotion, and high-dimensional Atari: **CartPole-v1**, **Acrobot-v1**, **LunarLander-v2**, **HalfCheetah**, and **Hopper**.
+The method matches vanilla PPO on reward while showing measurably more stable training across five environments spanning discrete control, continuous locomotion, and high-dimensional Atari: **CartPole-v1**, **Acrobot-v1**, **LunarLander-v2**, **HalfCheetah-v5**, and **Hopper-v5**.
 
 ---
 
@@ -31,8 +31,8 @@ rollout-slim/
 │   └── randomSkipAlternate.ipynb   # Method 1 — Fixed K-Step Sampling
 │
 ├── continious-nb/                  # Continuous-action environments (MuJoCo)
-│   ├── HalfCheetah/                # PPO + p% subsampling on HalfCheetah-v4
-│   └── Hopper/                     # PPO + p% subsampling on Hopper-v4
+│   ├── HalfCheetah/                # PPO + p% subsampling on HalfCheetah-v5
+│   └── Hopper/                     # PPO + p% subsampling on Hopper-v5
 │
 ├── atari/                          # High-dimensional pixel-based environments
 │
@@ -117,8 +117,8 @@ $$\hat{A}_t = \sum_{l=0}^{\infty} (\gamma \lambda)^l \delta_{t+l}, \qquad \delta
 | `CartPole-v1` | Discrete | Dense — every timestep | Low — 4D state, simple dynamics |
 | `Acrobot-v1` | Discrete | Sparse — penalty until goal | Medium — credit assignment required |
 | `LunarLander-v2` | Discrete | Shaped — position, velocity, tilt, fuel | High — long-horizon credit assignment |
-| `HalfCheetah-v4` | Continuous | Dense — velocity reward | High — 17D state, continuous locomotion |
-| `Hopper-v4` | Continuous | Dense — forward progress + survival | High — balance and locomotion simultaneously |
+| `HalfCheetah-v5` | Continuous | Dense — velocity reward | High — 17D state, continuous locomotion |
+| `Hopper-v5` | Continuous | Dense — forward progress + survival | High — balance and locomotion simultaneously |
 
 ---
 
@@ -136,19 +136,25 @@ $$\hat{A}_t = \sum_{l=0}^{\infty} (\gamma \lambda)^l \delta_{t+l}, \qquad \delta
 | $\gamma$ | 0.99 | 0.99 | 0.99 |
 | GAE $\lambda$ | 0.98 | 0.98 | 0.98 |
 
-### Hyperparameters — Continuous Environments (MuJoCo)
+---
 
-| Hyperparameter | HalfCheetah-v4 | Hopper-v4 |
-|----------------|----------------|-----------|
-| Optimizer | AdamW | AdamW |
-| Actor LR | — | — |
-| Critic LR | — | — |
-| PPO Clip $(\varepsilon)$ | — | — |
-| Entropy Coeff $(\beta)$ | — | — |
-| $\gamma$ | — | — |
-| GAE $\lambda$ | — | — |
+### Hyperparameters — Continuous Environments (HalfCheetah-v5 & Hopper-v5, shared configuration)
 
-> ⚠️ **Fill in the dashes above** with the actual values from `continious-nb/HalfCheetah/` and `continious-nb/Hopper/` before publishing.
+Both environments use the same base configuration. Epochs per update and hidden dimension $d_\text{model}$ are reduced at lower $p$ to match the smaller effective batch.
+
+| Hyperparameter | Pure PPO | $p = 85\%$ | $p = 75\%$ | $p = 65\%$ |
+|----------------|----------|------------|------------|------------|
+| Max Training Steps | 1.2M | 1.2M | 1.2M | 1.2M |
+| Rollout Steps | 2,048 | 2,048 | 2,048 | 2,048 |
+| PPO Clip $(\varepsilon)$ | 0.18 | 0.18 | 0.18 | 0.15 |
+| Optimizer | Adam | Adam | Adam | Adam |
+| Actor LR | 9e-5 | 9e-5 | 9e-5 | 9e-5 |
+| Critic LR | 3e-4 | 3e-4 | 3e-4 | 3e-4 |
+| Epochs per Update | 10 | 10 | 8 | 6 |
+| Batch Size | 256 | 256 | 256 | 256 |
+| $d_\text{model}$ | 128 | 128 | 96 | 96 |
+| $\gamma$ | 0.995 | 0.995 | 0.995 | 0.995 |
+| GAE $\lambda$ | 0.96 | 0.96 | 0.96 | 0.96 |
 
 **Evaluation Protocol:** At each checkpoint, the agent ran for 1 episode across 3 independent seeds. Reported reward is the mean across those 3 runs.
 
@@ -169,7 +175,7 @@ $$\hat{A}_t = \sum_{l=0}^{\infty} (\gamma \lambda)^l \delta_{t+l}, \qquad \delta
 
 ### Continuous Environments (MuJoCo)
 
-| Method | HalfCheetah-v4 | Hopper-v4 |
+| Method | HalfCheetah-v5 | Hopper-v5 |
 |--------|----------------|-----------|
 | Vanilla PPO | Baseline | Baseline |
 | **Method 3 — $p\%$ Subsample** | **Matches PPO** | **Matches PPO** |
