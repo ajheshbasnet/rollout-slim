@@ -4,9 +4,7 @@
 Reducing Temporal Correlation in PPO Without Degrading Performance
 
 **Author:** Ajhesh Basnet
-**Advisor:** Dr. B. Nagarajan
-**Institution:** Department of Artificial Intelligence and Data Science, KPR Institute of Engineering and Technology, Coimbatore
-**Contact:** ajheshb@gmail.com · nagarajan.b@kpriet.ac.in
+**Contact:** ajheshb@gmail.com
 
 ---
 
@@ -18,20 +16,35 @@ On-policy trajectory data is correlated by construction. Each state causally pro
 
 Three methods are presented for reducing this correlation without modifying the core PPO pipeline. The main finding is that **randomly subsampling $p\%$ of transitions after GAE computation** — rather than before — is sufficient to break the temporal correlation structure while keeping the reward signal completely intact.
 
-The method matches vanilla PPO on reward while showing measurably more stable training across three environments of increasing difficulty: **CartPole-v1**, **Acrobot-v1**, and **LunarLander-v2**.
+The method matches vanilla PPO on reward while showing measurably more stable training across environments of increasing difficulty: **CartPole-v1**, **Acrobot-v1**, **LunarLander-v2**, and **Atari** environments.
 
 ---
 
 ## Repository Structure
 
-| File | What it does |
-|------|--------------|
-| `Full-PPO.ipynb` | Vanilla PPO baseline — standard PPO trained on the full 1400-step rollout buffer with no subsampling. This is the control against which all three methods are compared. |
-| `P% PPO.ipynb` | Method 3 (main contribution) — PPO with random $p\%$ subsampling applied after GAE. At $p = 75\%$, matches vanilla PPO on reward while producing more stable KL, entropy, and value metrics. |
-| `randSkipAlternate.ipynb` | Method 2 — Random Adaptive $K$-Step Sampling. Randomises the skip interval per trajectory using $\varepsilon \sim \mathcal{N}(0,1)$ to eliminate the fixed parity bias of Method 1. Works on CartPole and Acrobot but breaks on LunarLander due to reward summation destroying credit assignment. |
-| `randomSkipAlternate.ipynb` | Method 1 — Fixed $K$-Step Sampling. Stores every $K$-th transition and accumulates intermediate rewards. Works on CartPole-v1 only; fails on more complex environments. |
-| `static/` | Figures and abstract image used in the paper. |
-| `README.md` | This file. |
+```
+rollout-slim/
+├── descrete-nb/          # Notebooks for discrete-action environments (CartPole, Acrobot, LunarLander)
+│   ├── Full-PPO.ipynb            # Vanilla PPO baseline — full 1400-step rollout, no subsampling
+│   ├── P% PPO.ipynb              # Method 3 (main contribution) — p% subsampling after GAE
+│   ├── randSkipAlternate.ipynb   # Method 2 — Random Adaptive K-Step Sampling
+│   └── randomSkipAlternate.ipynb # Method 1 — Fixed K-Step Sampling
+├── continious-nb/        # Notebooks for continuous-action environments
+├── atari/                # Notebooks for Atari environments
+├── static/               # Figures and abstract image used in the paper
+└── README.md             # This file
+```
+
+### Notebook Descriptions
+
+| Notebook | Location | What it does |
+|----------|----------|--------------|
+| `Full-PPO.ipynb` | `descrete-nb/` | Vanilla PPO baseline — standard PPO trained on the full 1400-step rollout buffer with no subsampling. This is the control against which all three methods are compared. |
+| `P% PPO.ipynb` | `descrete-nb/` | Method 3 (main contribution) — PPO with random $p\%$ subsampling applied after GAE. At $p = 75\%$, matches vanilla PPO on reward while producing more stable KL, entropy, and value metrics. |
+| `randSkipAlternate.ipynb` | `descrete-nb/` | Method 2 — Random Adaptive $K$-Step Sampling. Randomises the skip interval per trajectory using $\varepsilon \sim \mathcal{N}(0,1)$ to eliminate the fixed parity bias of Method 1. Works on CartPole and Acrobot but breaks on LunarLander due to reward summation destroying credit assignment. |
+| `randomSkipAlternate.ipynb` | `descrete-nb/` | Method 1 — Fixed $K$-Step Sampling. Stores every $K$-th transition and accumulates intermediate rewards. Works on CartPole-v1 only; fails on more complex environments. |
+| `continious-nb/` | root | PPO experiments on continuous-action environments. |
+| `atari/` | root | PPO experiments scaled to Atari environments. |
 
 ---
 
@@ -173,11 +186,11 @@ On-policy trajectories carry far more redundant, correlated transitions than is 
 
 ```bibtex
 @article{basnet2026rolloutslim,
-  title     = {Not All Transitions Matter: Evidence from PPO},
-  author    = {Basnet, Ajhesh and Nagarajan, B.},
-  year      = {2026},
-  note      = {Department of AI and Data Science, KPRIET, Coimbatore},
-  url       = {https://github.com/ajheshbasnet/rollout-slim}
+  title  = {Not All Transitions Matter: Evidence from PPO},
+  author = {Ajhesh Basnet},
+  year   = {2026},
+  note   = {Independent Research},
+  url    = {https://github.com/ajheshbasnet/rollout-slim}
 }
 ```
 
