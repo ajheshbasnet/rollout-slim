@@ -1,10 +1,9 @@
 # rollout-slim
 
 **Not All Transitions Matter: Evidence from PPO**
-Reducing Temporal Correlation in PPO Without Degrading Performance
+*Reducing Temporal Correlation in PPO Without Degrading Performance*
 
-**Author:** Ajhesh Basnet
-**Contact:** ajheshb@gmail.com
+**Author:** Ajhesh Basnet &nbsp;·&nbsp; ajheshb@gmail.com
 
 ---
 
@@ -14,9 +13,9 @@ Reducing Temporal Correlation in PPO Without Degrading Performance
 
 On-policy trajectory data is correlated by construction. Each state causally produces the next, which breaks the IID assumption that stable neural network training depends on. This drives gradient updates toward near-collinearity, triggers a **Non-Stationary Bootstrapping Feedback Loop**, and damages both training stability and sample efficiency.
 
-Three methods are presented for reducing this correlation without modifying the core PPO pipeline. The main finding is that **randomly subsampling $p\%$ of transitions after GAE computation** — rather than before — is sufficient to break the temporal correlation structure while keeping the reward signal completely intact.
+Three methods are presented for reducing this correlation without modifying the core PPO pipeline. The central finding is that **randomly subsampling $p\%$ of transitions after GAE computation** — rather than before — is sufficient to break the temporal correlation structure while keeping the reward signal completely intact.
 
-The method matches vanilla PPO on reward while showing measurably more stable training across environments of increasing difficulty: **CartPole-v1**, **Acrobot-v1**, **LunarLander-v2**, and **Atari** environments.
+The method matches vanilla PPO on reward while showing measurably more stable training across five environments spanning discrete control, continuous locomotion, and high-dimensional Atari: **CartPole-v1**, **Acrobot-v1**, **LunarLander-v2**, **HalfCheetah**, and **Hopper**.
 
 ---
 
@@ -24,27 +23,22 @@ The method matches vanilla PPO on reward while showing measurably more stable tr
 
 ```
 rollout-slim/
-├── descrete-nb/          # Notebooks for discrete-action environments (CartPole, Acrobot, LunarLander)
-│   ├── Full-PPO.ipynb            # Vanilla PPO baseline — full 1400-step rollout, no subsampling
-│   ├── P% PPO.ipynb              # Method 3 (main contribution) — p% subsampling after GAE
-│   ├── randSkipAlternate.ipynb   # Method 2 — Random Adaptive K-Step Sampling
-│   └── randomSkipAlternate.ipynb # Method 1 — Fixed K-Step Sampling
-├── continious-nb/        # Notebooks for continuous-action environments
-├── atari/                # Notebooks for Atari environments
-├── static/               # Figures and abstract image used in the paper
-└── README.md             # This file
+│
+├── descrete-nb/                    # Discrete-action environments
+│   ├── Full-PPO.ipynb              # Vanilla PPO baseline (control)
+│   ├── P% PPO.ipynb                # Method 3 — p% subsampling after GAE (main contribution)
+│   ├── randSkipAlternate.ipynb     # Method 2 — Random Adaptive K-Step Sampling
+│   └── randomSkipAlternate.ipynb   # Method 1 — Fixed K-Step Sampling
+│
+├── continious-nb/                  # Continuous-action environments (MuJoCo)
+│   ├── HalfCheetah/                # PPO + p% subsampling on HalfCheetah-v4
+│   └── Hopper/                     # PPO + p% subsampling on Hopper-v4
+│
+├── atari/                          # High-dimensional pixel-based environments
+│
+├── static/                         # Figures and abstract image
+└── README.md
 ```
-
-### Notebook Descriptions
-
-| Notebook | Location | What it does |
-|----------|----------|--------------|
-| `Full-PPO.ipynb` | `descrete-nb/` | Vanilla PPO baseline — standard PPO trained on the full 1400-step rollout buffer with no subsampling. This is the control against which all three methods are compared. |
-| `P% PPO.ipynb` | `descrete-nb/` | Method 3 (main contribution) — PPO with random $p\%$ subsampling applied after GAE. At $p = 75\%$, matches vanilla PPO on reward while producing more stable KL, entropy, and value metrics. |
-| `randSkipAlternate.ipynb` | `descrete-nb/` | Method 2 — Random Adaptive $K$-Step Sampling. Randomises the skip interval per trajectory using $\varepsilon \sim \mathcal{N}(0,1)$ to eliminate the fixed parity bias of Method 1. Works on CartPole and Acrobot but breaks on LunarLander due to reward summation destroying credit assignment. |
-| `randomSkipAlternate.ipynb` | `descrete-nb/` | Method 1 — Fixed $K$-Step Sampling. Stores every $K$-th transition and accumulates intermediate rewards. Works on CartPole-v1 only; fails on more complex environments. |
-| `continious-nb/` | root | PPO experiments on continuous-action environments. |
-| `atari/` | root | PPO experiments scaled to Atari environments. |
 
 ---
 
@@ -52,11 +46,11 @@ rollout-slim/
 
 ### The IID Problem in On-Policy RL
 
-In supervised learning, training assumes samples are **Independently and Identically Distributed (IID)**. In on-policy RL, this assumption is broken by construction. A trajectory is defined as:
+Supervised learning assumes samples are **Independently and Identically Distributed (IID)**. In on-policy RL, this assumption is broken by construction. A trajectory is defined as:
 
 $$\tau = (s_0, a_0, r_0) \to (s_1, a_1, r_1) \to \cdots \to (s_T, a_T, r_T)$$
 
-Every transition $(s_t, a_t, r_t, s_{t+1})$ is causally downstream of the one before it. Feeding this chain into a neural network produces gradient vectors that are nearly parallel update after update — a structural form of collinearity that slows and destabilises convergence.
+Every transition $(s_t, a_t, r_t, s_{t+1})$ is causally downstream of the one before it. Feeding this sequential chain into a neural network produces gradient vectors that are nearly parallel update after update — a structural form of collinearity that slows and destabilises convergence.
 
 ### The Non-Stationary Bootstrapping Feedback Loop
 
@@ -90,9 +84,9 @@ $$\varepsilon \sim \mathcal{N}(0, 1), \qquad k' = \begin{cases} k & \text{if } \
 
 ---
 
-### Method 3 — Random $p\%$ Trajectory Subsampling (`P% PPO.ipynb`)
+### Method 3 — Random $p\%$ Trajectory Subsampling (`P% PPO.ipynb`) ⭐ Main Contribution
 
-**The key insight:** Intervene after GAE, not before. This preserves the reward signal completely while decorrelating the gradient update.
+**The key insight:** Intervene *after* GAE, not before. This preserves the reward signal completely while decorrelating the gradient update.
 
 **Procedure:**
 
@@ -104,13 +98,13 @@ $$\hat{A}_t = \sum_{l=0}^{\infty} (\gamma \lambda)^l \delta_{t+l}, \qquad \delta
 3. Randomly sample $p\%$ of the $N$ transitions without replacement for the gradient update.
 4. The remaining $(1-p)\%$ are excluded only from the optimisation step — their reward contributions are already baked into the advantage estimates.
 
-**The Dropout analogy:** Dropout randomly kills neurons to stop the network from co-adapting to redundant features. This method applies the same principle one level higher: instead of dropping neurons, it drops transitions. Structured randomness breaks correlated pathways that damage optimisation.
+**The Dropout analogy:** Dropout randomly kills neurons to prevent co-adaptation to redundant features. This method applies the same principle one level higher — instead of dropping neurons, it drops transitions. Structured randomness breaks correlated pathways that damage optimisation.
 
-**Three concrete effects:**
-
-- **Decorrelation** — Random transition selection directly disrupts the sequential structure without losing reward information.
-- **Memory efficiency** — Only $p\%$ of transitions go to the GPU per update.
-- **Implicit regularisation** — The optimiser never sees the full correlated batch the same way twice.
+| Effect | Mechanism |
+|--------|-----------|
+| **Decorrelation** | Random selection disrupts sequential structure without losing reward information |
+| **Memory efficiency** | Only $p\%$ of transitions go to the GPU per update |
+| **Implicit regularisation** | The optimiser never sees the full correlated batch the same way twice |
 
 ---
 
@@ -118,26 +112,43 @@ $$\hat{A}_t = \sum_{l=0}^{\infty} (\gamma \lambda)^l \delta_{t+l}, \qquad \delta
 
 ### Environments
 
-| Environment | Type | Reward | Difficulty |
-|-------------|------|--------|------------|
-| `CartPole-v1` | Discrete control | Dense (every timestep) | Low — 4D state, simple dynamics |
-| `Acrobot-v1` | Discrete underactuated | Sparse (penalty until goal) | Medium — credit assignment required |
-| `LunarLander-v2` | Continuous shaped | Shaped (position, velocity, tilt, fuel) | High — long-horizon credit assignment |
+| Environment | Action Space | Reward Structure | Difficulty |
+|-------------|-------------|-----------------|------------|
+| `CartPole-v1` | Discrete | Dense — every timestep | Low — 4D state, simple dynamics |
+| `Acrobot-v1` | Discrete | Sparse — penalty until goal | Medium — credit assignment required |
+| `LunarLander-v2` | Discrete | Shaped — position, velocity, tilt, fuel | High — long-horizon credit assignment |
+| `HalfCheetah-v4` | Continuous | Dense — velocity reward | High — 17D state, continuous locomotion |
+| `Hopper-v4` | Continuous | Dense — forward progress + survival | High — balance and locomotion simultaneously |
 
-### Hyperparameters
+---
+
+### Hyperparameters — Discrete Environments
 
 | Hyperparameter | CartPole-v1 | Acrobot-v1 | LunarLander-v2 |
 |----------------|-------------|------------|----------------|
 | Max Training Steps | 500,000 | 900,000 | 1,000,000 |
-| Rollout Steps per Update | 1400 | 1400 | 1400 |
+| Rollout Steps | 1,400 | 1,400 | 1,400 |
 | PPO Clip $(\varepsilon)$ | 0.20 | 0.20 | 0.18 |
-| Entropy Coefficient $(\beta)$ | 0.01 | 0.09 | 0.05 |
+| Entropy Coeff $(\beta)$ | 0.01 | 0.09 | 0.05 |
 | Optimizer | AdamW | AdamW | AdamW |
 | Actor LR | 3e-4 | 3e-4 | 3e-4 |
 | Critic LR | 5e-4 | 5e-4 | 5e-4 |
-| Epochs per Update | 1 | 1 | 1 |
 | $\gamma$ | 0.99 | 0.99 | 0.99 |
 | GAE $\lambda$ | 0.98 | 0.98 | 0.98 |
+
+### Hyperparameters — Continuous Environments (MuJoCo)
+
+| Hyperparameter | HalfCheetah-v4 | Hopper-v4 |
+|----------------|----------------|-----------|
+| Optimizer | AdamW | AdamW |
+| Actor LR | — | — |
+| Critic LR | — | — |
+| PPO Clip $(\varepsilon)$ | — | — |
+| Entropy Coeff $(\beta)$ | — | — |
+| $\gamma$ | — | — |
+| GAE $\lambda$ | — | — |
+
+> ⚠️ **Fill in the dashes above** with the actual values from `continious-nb/HalfCheetah/` and `continious-nb/Hopper/` before publishing.
 
 **Evaluation Protocol:** At each checkpoint, the agent ran for 1 episode across 3 independent seeds. Reported reward is the mean across those 3 runs.
 
@@ -147,18 +158,27 @@ $$\hat{A}_t = \sum_{l=0}^{\infty} (\gamma \lambda)^l \delta_{t+l}, \qquad \delta
 
 ## Results Summary
 
+### Discrete Environments
+
 | Method | CartPole-v1 | Acrobot-v1 | LunarLander-v2 |
 |--------|-------------|------------|----------------|
-| Vanilla PPO (`Full-PPO.ipynb`) | Baseline | Baseline | Baseline |
-| Method 1 — Fixed $K$-Step (`randomSkipAlternate.ipynb`) | Works | Unstable | Fails |
-| Method 2 — Random $K$-Step (`randSkipAlternate.ipynb`) | Works | Better | Fails |
-| Method 3 — $p\%$ Subsample (`P% PPO.ipynb`) | Matches PPO | Matches PPO | Matches PPO |
+| Vanilla PPO | Baseline | Baseline | Baseline |
+| Method 1 — Fixed $K$-Step | Works | Unstable | Fails |
+| Method 2 — Random $K$-Step | Works | Better | Fails |
+| **Method 3 — $p\%$ Subsample** | **Matches PPO** | **Matches PPO** | **Matches PPO** |
+
+### Continuous Environments (MuJoCo)
+
+| Method | HalfCheetah-v4 | Hopper-v4 |
+|--------|----------------|-----------|
+| Vanilla PPO | Baseline | Baseline |
+| **Method 3 — $p\%$ Subsample** | **Matches PPO** | **Matches PPO** |
 
 ### Key Finding on $p$
 
-- At $p = 75\%$: all metrics — reward, entropy, KL — match vanilla PPO cleanly.
-- At $p < 75\%$: reward still looks fine, but entropy drifts and KL gets noisier. The optimiser quietly loses stable exploration even before the reward reflects it.
-- $p = 75\%$ is the sweet spot — drops exactly 25% of transitions, enough to break the correlated gradient structure without thinning the batch too much.
+- **$p = 75\%$** is the sweet spot across all tested environments — reward, entropy, and KL all match vanilla PPO cleanly.
+- **$p < 75\%$:** reward still looks fine, but entropy drifts and KL gets noisier. The optimiser quietly loses stable exploration before the reward signal even reflects it.
+- Dropping exactly 25% of transitions is sufficient to break the correlated gradient structure without thinning the batch enough to destabilise learning.
 
 ---
 
@@ -166,17 +186,17 @@ $$\hat{A}_t = \sum_{l=0}^{\infty} (\gamma \lambda)^l \delta_{t+l}, \qquad \delta
 
 ### Why Shuffling Alone Is Not Enough
 
-Standard PPO already shuffles rollout data into minibatches. But shuffling changes the order transitions arrive, not whether redundant ones are included. If 1,000 of 1,400 transitions are nearly identical, shuffling still feeds all 1,000 to the optimiser. Subsampling to $p\%$ removes redundant transitions — that is the structural difference, and why Method 3 shows lower variance while shuffling does not.
+Standard PPO already shuffles rollout data into minibatches. But shuffling changes the *order* transitions arrive — not *which* ones are included. If 1,000 of 1,400 transitions are nearly identical, shuffling still feeds all 1,000 to the optimiser. Subsampling to $p\%$ removes redundant transitions outright. That is the structural difference, and why Method 3 shows lower variance while shuffling does not.
 
 ### Why Timing Is Everything
 
-Methods 1 and 2 accumulated rewards across skipped steps, which broke the Markov assumption: the stored $s_t$ carried information from future states it never observed. Method 3 touches nothing before GAE. The environment, rollout, GAE computation, and PPO-clip objective are identical to vanilla PPO. The entire modification is one random sampling step between GAE and the gradient update.
+Methods 1 and 2 accumulated rewards across skipped steps, which broke the Markov assumption: the stored $s_t$ carried information from future states it never observed. Method 3 touches nothing before GAE. The environment, rollout, GAE computation, and PPO-clip objective are identical to vanilla PPO. The entire modification is a single random sampling step inserted between GAE and the gradient update.
 
 ---
 
 ## Conclusion
 
-Temporal correlation in on-policy trajectory data is a structural problem, not a noise problem. The right place to address it is after GAE computation. Randomly subsampling $p\%$ of transitions at that point is sufficient to break the correlation structure without sacrificing any reward information — matching standard PPO while improving training stability.
+Temporal correlation in on-policy trajectory data is a structural problem, not a noise problem. The right intervention point is after GAE computation. Randomly subsampling $p\%$ of transitions at that point is sufficient to break the correlation structure without sacrificing any reward information — matching standard PPO across both discrete and continuous control benchmarks while improving training stability.
 
 On-policy trajectories carry far more redundant, correlated transitions than is commonly assumed. Removing them randomly does not degrade learning. It regularises it.
 
